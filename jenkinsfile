@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "my-app"
+        IMAGE_TAG = "jenkins-${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+            }
+        }
+
+        stage('Run Trivy Scan') {
+            steps {
+                sh '''
+                docker run --rm \
+                  -v /var/run/docker.sock:/var/run/docker.sock \
+                  -v $WORKSPACE:/work \
+                  aquasec/trivy:latest image \
+                  --format table \
+                  --output /work/trivy-report.txt \
+                  ${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Archive Trivy Report') {
+            steps {
+                archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
+            }
+        }
+    }
+}
