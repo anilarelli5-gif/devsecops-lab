@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t my-app .'
+            }
+        }
+
+        stage('Scan with Trivy') {
+            steps {
+                sh '''
+                docker run --rm \
+                  -v /var/run/docker.sock:/var/run/docker.sock \
+                  aquasec/trivy image my-app
+                '''
+            }
+        }
+    }
+}
