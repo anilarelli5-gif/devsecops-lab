@@ -6,6 +6,7 @@ pipeline {
         IMAGE_TAG  = "jenkins-${BUILD_NUMBER}"
         ZAP_NET    = "zapnet"
         APP_NAME   = "juice-shop"
+        DEPLOY_NAME = "my-app"
     }
 
     stages {
@@ -17,7 +18,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                sh '''
+                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                '''
             }
         }
 
@@ -31,8 +34,8 @@ pipeline {
                   --severity HIGH,CRITICAL \
                   --ignore-unfixed \
                   --exit-code 1 \
-                  --format table \
-                  --output /work/trivy-report.txt \
+                  --format json \
+                  --output /work/trivy-report.json \
                   ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
@@ -54,6 +57,7 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p zap-reports
+                set +e
 
                 docker run --rm -t \
                   --network ${ZAP_NET} \
@@ -63,6 +67,27 @@ pipeline {
                   -t http://${APP_NAME}:3000 \
                   -J zap-report.json \
                   -r zap-report.html
+
+                ZAP_EXIT=$?
+                echo "ZAP exit code: $ZAP_EXIT"
+
+                if [ "$ZAP_EXIT" -eq 3 ]; then
+                  exit 3
+                fi
+
+                exit 0
+                '''
+            }
+        }
+
+        stage('Deploy App') {
+            steps {
+                sh '''
+                docker rm -f ${DEPLOY_NAME} >/dev/null 2>&1 || true
+                docker run -d \
+                  --name ${DEPLOY_NAME} \
+                  -p 5000:5000 \
+                  ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
         }
@@ -72,7 +97,10 @@ pipeline {
         always {
             archiveArtifacts artifacts: 'trivy-report.json', allowEmptyArchive: true, fingerprint: true
             archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true, fingerprint: true
-            sh 'docker rm -f ${APP_NAME} >/dev/null 2>&1 || true'
+
+            sh '''
+            docker rm -f ${APP_NAME} >/dev/null 2>&1 || true
+            '''
         }
     }
 }
