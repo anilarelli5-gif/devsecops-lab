@@ -29,7 +29,7 @@ pipeline {
                   --severity HIGH,CRITICAL \
                   --ignore-unfixed \
                   --exit-code 1 \
-                  --format txt \
+                  --format table \
                   --output /work/trivy-report.txt \
                   ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
