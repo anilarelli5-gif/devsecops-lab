@@ -26,17 +26,20 @@ pipeline {
                   -v /var/run/docker.sock:/var/run/docker.sock \
                   -v $WORKSPACE:/work \
                   aquasec/trivy:0.69.3 image \
-                  --format table \
-                  --output /work/trivy-report.txt \
+                  --severity HIGH,CRITICAL \
+                  --ignore-unfixed \
+                  --exit-code 1 \
+                  --format json \
+                  --output /work/trivy-report.json \
                   ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
         }
+    }
 
-        stage('Archive Trivy Report') {
-            steps {
-                archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
-            }
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-report.json', fingerprint: true, allowEmptyArchive: true
         }
     }
 }
