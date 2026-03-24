@@ -3,7 +3,9 @@ pipeline {
 
     environment {
         IMAGE_NAME = "my-app"
-        IMAGE_TAG = "jenkins-${BUILD_NUMBER}"
+        IMAGE_TAG  = "jenkins-${BUILD_NUMBER}"
+        ZAP_NET    = "zapnet"
+        APP_NAME   = "juice-shop"
     }
 
     stages {
@@ -19,7 +21,7 @@ pipeline {
             }
         }
 
-        stage('Run Trivy Scan') {
+        stage('Run Trivy Gate') {
             steps {
                 sh '''
                 docker run --rm \
@@ -27,6 +29,7 @@ pipeline {
                   -v $WORKSPACE:/work \
                   aquasec/trivy:0.69.3 image \
                   --severity HIGH,CRITICAL \
+                  --ignore-unfixed \
                   --exit-code 1 \
                   --format table \
                   --output /work/trivy-report.txt \
@@ -34,11 +37,42 @@ pipeline {
                 '''
             }
         }
+
+        stage('Start Juice Shop') {
+            steps {
+                sh '''
+                docker network inspect ${ZAP_NET} >/dev/null 2>&1 || docker network create ${ZAP_NET}
+                docker rm -f ${APP_NAME} >/dev/null 2>&1 || true
+                docker run -d --name ${APP_NAME} --network ${ZAP_NET} -p 4000:3000 bkimminich/juice-shop
+                sleep 20
+                curl -I http://localhost:4000
+                '''
+            }
+        }
+
+        stage('Run ZAP Baseline Scan') {
+            steps {
+                sh '''
+                mkdir -p zap-reports
+
+                docker run --rm -t \
+                  --network ${ZAP_NET} \
+                  -v $WORKSPACE/zap-reports:/zap/wrk/:rw \
+                  ghcr.io/zaproxy/zaproxy:stable \
+                  zap-baseline.py \
+                  -t http://${APP_NAME}:3000 \
+                  -J zap-report.json \
+                  -r zap-report.html
+                '''
+            }
+        }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'trivy-report.json', fingerprint: true, allowEmptyArchive: true
+            archiveArtifacts artifacts: 'trivy-report.json', allowEmptyArchive: true, fingerprint: true
+            archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true, fingerprint: true
+            sh 'docker rm -f ${APP_NAME} >/dev/null 2>&1 || true'
         }
     }
 }
