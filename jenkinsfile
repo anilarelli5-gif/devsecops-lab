@@ -27,7 +27,6 @@ pipeline {
                   -v $WORKSPACE:/work \
                   aquasec/trivy:0.69.3 image \
                   --severity HIGH,CRITICAL \
-                  --ignore-unfixed \
                   --exit-code 1 \
                   --format table \
                   --output /work/trivy-report.txt \
