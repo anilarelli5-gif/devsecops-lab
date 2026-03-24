@@ -29,8 +29,8 @@ pipeline {
                   --severity HIGH,CRITICAL \
                   --ignore-unfixed \
                   --exit-code 1 \
-                  --format json \
-                  --output /work/trivy-report.json \
+                  --format txt \
+                  --output /work/trivy-report.txt \
                   ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
