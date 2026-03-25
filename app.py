@@ -1,24 +1,26 @@
-from flask import Flask
+from flask import Flask, request
 import os
 
 app = Flask(__name__)
 
-APP_MESSAGE = os.getenv("APP_MESSAGE", "Hello DevSecOps")
-SECRET_TOKEN = os.getenv("SECRET_TOKEN", "not-set")
+# VULNERABILITY 1: hardcoded secret
+app.config["SECRET_KEY"] = "super-hardcoded-secret"
 
-@app.route('/')
+# VULNERABILITY 2: weak input handling
+@app.route("/")
 def home():
-    return APP_MESSAGE
+    name = request.args.get("name", "guest")
+    return f"Hello {name}"
 
-@app.route('/health')
-def health():
-    return "OK"
+# VULNERABILITY 3: debug info style route
+@app.route("/config")
+def config():
+    return {
+        "debug": True,
+        "secret_key": app.config["SECRET_KEY"],
+        "env_message": os.getenv("APP_MESSAGE", "not-set")
+    }
 
-@app.route('/secret-check')
-def secret_check():
-    if SECRET_TOKEN == "not-set":
-        return "Secret missing", 500
-    return "Secret loaded", 200
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    # VULNERABILITY 4: debug mode enabled
+    app.run(host="0.0.0.0", port=5000, debug=True)
