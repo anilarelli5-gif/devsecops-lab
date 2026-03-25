@@ -6,7 +6,6 @@ pipeline {
         IMAGE_TAG    = "jenkins-${BUILD_NUMBER}"
         ZAP_NET      = "zapnet"
         APP_NAME     = "juice-shop"
-        DEPLOY_NAME  = "my-app"
         APP_MESSAGE  = "Hello from Jenkins DevSecOps 🚀"
     }
 
@@ -81,17 +80,15 @@ pipeline {
             }
         }
 
-        stage('Deploy App') {
+        stage('Deploy with Docker Compose') {
             steps {
                 withCredentials([string(credentialsId: 'my-secret-token', variable: 'SECRET_TOKEN')]) {
                     sh '''
-                    docker rm -f ${DEPLOY_NAME} >/dev/null 2>&1 || true
-                    docker run -d \
-                      --name ${DEPLOY_NAME} \
-                      -p 5000:5000 \
-                      -e APP_MESSAGE="${APP_MESSAGE}" \
-                      -e SECRET_TOKEN="${SECRET_TOKEN}" \
-                      ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker rm -f my-app >/dev/null 2>&1 || true
+                    docker rm -f my-redis >/dev/null 2>&1 || true
+
+                    APP_MESSAGE="${APP_MESSAGE}" SECRET_TOKEN="${SECRET_TOKEN}" docker-compose down || true
+                    APP_MESSAGE="${APP_MESSAGE}" SECRET_TOKEN="${SECRET_TOKEN}" docker-compose up -d --build
                     '''
                 }
             }
