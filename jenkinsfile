@@ -2,11 +2,12 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "my-app"
-        IMAGE_TAG  = "jenkins-${BUILD_NUMBER}"
-        ZAP_NET    = "zapnet"
-        APP_NAME   = "juice-shop"
-        DEPLOY_NAME = "my-app"
+        IMAGE_NAME   = "my-app"
+        IMAGE_TAG    = "jenkins-${BUILD_NUMBER}"
+        ZAP_NET      = "zapnet"
+        APP_NAME     = "juice-shop"
+        DEPLOY_NAME  = "my-app"
+        APP_MESSAGE  = "Hello from Jenkins DevSecOps 🚀"
     }
 
     stages {
@@ -82,13 +83,17 @@ pipeline {
 
         stage('Deploy App') {
             steps {
-                sh '''
-                docker rm -f ${DEPLOY_NAME} >/dev/null 2>&1 || true
-                docker run -d \
-                  --name ${DEPLOY_NAME} \
-                  -p 5000:5000 \
-                  ${IMAGE_NAME}:${IMAGE_TAG}
-                '''
+                withCredentials([string(credentialsId: 'my-secret-token', variable: 'SECRET_TOKEN')]) {
+                    sh '''
+                    docker rm -f ${DEPLOY_NAME} >/dev/null 2>&1 || true
+                    docker run -d \
+                      --name ${DEPLOY_NAME} \
+                      -p 5000:5000 \
+                      -e APP_MESSAGE="${APP_MESSAGE}" \
+                      -e SECRET_TOKEN="${SECRET_TOKEN}" \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
+                    '''
+                }
             }
         }
     }
