@@ -2,21 +2,13 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME   = "my-app"
-        IMAGE_TAG    = "jenkins-${BUILD_NUMBER}"
-        ZAP_NET      = "zapnet"
-        APP_NAME     = "juice-shop"
-        APP_MESSAGE  = "Hello from Jenkins DevSecOps 🚀"
+        IMAGE_NAME = "anilarelli/my-app"
+        IMAGE_TAG  = "jenkins-${BUILD_NUMBER}"
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
 
-        stage('Build Docker Image') {
+        stage('Build Image') {
             steps {
                 sh '''
                 docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
@@ -24,85 +16,22 @@ pipeline {
             }
         }
 
-        stage('Run Trivy Gate') {
+        stage('Login to Docker Hub') {
             steps {
-                sh '''
-                docker run --rm \
-                  -v /var/run/docker.sock:/var/run/docker.sock \
-                  -v $WORKSPACE:/work \
-                  aquasec/trivy:0.69.3 image \
-                  --severity HIGH,CRITICAL \
-                  --ignore-unfixed \
-                  --exit-code 1 \
-                  --format json \
-                  --output /work/trivy-report.json \
-                  ${IMAGE_NAME}:${IMAGE_TAG}
-                '''
-            }
-        }
-
-        stage('Start Juice Shop') {
-            steps {
-                sh '''
-                docker network inspect ${ZAP_NET} >/dev/null 2>&1 || docker network create ${ZAP_NET}
-                docker rm -f ${APP_NAME} >/dev/null 2>&1 || true
-                docker run -d --name ${APP_NAME} --network ${ZAP_NET} -p 4000:3000 bkimminich/juice-shop
-                sleep 20
-                curl -I http://localhost:4000
-                '''
-            }
-        }
-
-        stage('Run ZAP Baseline Scan') {
-            steps {
-                sh '''
-                mkdir -p zap-reports
-                set +e
-
-                docker run --rm -t \
-                  --network ${ZAP_NET} \
-                  -v $WORKSPACE/zap-reports:/zap/wrk/:rw \
-                  ghcr.io/zaproxy/zaproxy:stable \
-                  zap-baseline.py \
-                  -t http://${APP_NAME}:3000 \
-                  -J zap-report.json \
-                  -r zap-report.html
-
-                ZAP_EXIT=$?
-                echo "ZAP exit code: $ZAP_EXIT"
-
-                if [ "$ZAP_EXIT" -eq 3 ]; then
-                  exit 3
-                fi
-
-                exit 0
-                '''
-            }
-        }
-
-        stage('Deploy with Docker Compose') {
-            steps {
-                withCredentials([string(credentialsId: 'my-secret-token', variable: 'SECRET_TOKEN')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
-                    docker rm -f my-app >/dev/null 2>&1 || true
-                    docker rm -f my-redis >/dev/null 2>&1 || true
-
-                    APP_MESSAGE="${APP_MESSAGE}" SECRET_TOKEN="${SECRET_TOKEN}" docker-compose down || true
-                    APP_MESSAGE="${APP_MESSAGE}" SECRET_TOKEN="${SECRET_TOKEN}" docker-compose up -d --build
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
                 }
             }
         }
-    }
 
-    post {
-        always {
-            archiveArtifacts artifacts: 'trivy-report.json', allowEmptyArchive: true, fingerprint: true
-            archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true, fingerprint: true
-
-            sh '''
-            docker rm -f ${APP_NAME} >/dev/null 2>&1 || true
-            '''
+        stage('Push Image') {
+            steps {
+                sh '''
+                docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+            }
         }
     }
 }
