@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-app
+          image: anilarelli/my-app:jenkins-36
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: APP_MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: my-app-config
+                  key: APP_MESSAGE
+            - name: SECRET_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-secret
+                  key: SECRET_TOKEN
