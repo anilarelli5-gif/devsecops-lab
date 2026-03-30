@@ -15,7 +15,7 @@ spec:
       containers:
         - name: my-app
           image: anilarelli/my-app:jenkins-36
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
           env:
