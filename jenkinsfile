@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -7,6 +8,11 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
         stage('Build Image') {
             steps {
@@ -18,7 +24,7 @@ pipeline {
 
         stage('Login to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                     echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
@@ -31,6 +37,20 @@ pipeline {
                 sh '''
                 docker push ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'minikube-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    sh '''
+                    export KUBECONFIG=$KUBECONFIG_FILE
+
+                    kubectl get nodes
+                    kubectl set image deployment/my-app my-app=${IMAGE_NAME}:${IMAGE_TAG}
+                    kubectl rollout status deployment/my-app
+                    '''
+                }
             }
         }
     }
