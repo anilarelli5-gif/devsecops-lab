@@ -9,8 +9,8 @@ def home():
 
 
 @app.route("/secret")
-        def secret():
-            return os.getenv("SECRET_TOKEN", "no secret")
+def secret():
+    return os.getenv("SECRET_TOKEN", "no secret")
 
 
 @app.route("/health")
