@@ -1,16 +1,23 @@
-from flask import Flask
-import redis
 import os
+from flask import Flask
 
 app = Flask(__name__)
 
-redis_host = os.getenv("REDIS_HOST", "localhost")
-r = redis.Redis(host=redis_host, port=6379)
-
 @app.route("/")
 def home():
-    count = r.incr("hits")
-    return f"Hello DevSecOps 🚀 - Visits: {count}"
+    return os.getenv("APP_MESSAGE", "default message")
+
+
+@app.route("/secret")
+        def secret():
+            return os.getenv("SECRET_TOKEN", "no secret")
+
+
+@app.route("/health")
+def health():
+    return "Ok"
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
