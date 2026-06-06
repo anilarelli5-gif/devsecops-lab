@@ -1,4 +1,4 @@
-import os
+import os,time
 from flask import Flask, request
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
@@ -37,18 +37,12 @@ def metrics():
 
 # 🔥 Track metrics for every request
 @app.before_request
-def start_timer():
-    request.start_time = REQUEST_LATENCY.time()
+def before_request():
+    request.start_time = time.time()
 
 @app.after_request
 def record_metrics(response):
-    REQUEST_COUNT.labels(
-        method=request.method,
-        endpoint=request.path,
-        http_status=response.status_code
-    ).inc()
-
-    request.start_time.observe_duration()
+    REQUEST_LATENCY.observe(time.time() - request.start_time)
     return response
 
 
