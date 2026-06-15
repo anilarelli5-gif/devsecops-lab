@@ -13,7 +13,7 @@ REQUEST_COUNT = Counter(
 
 REQUEST_LATENCY = Histogram(
     'http_request_duration_seconds',
-    'Request latency'
+    'HTTP Request latency'
 )
 
 # 🔹 Routes
@@ -42,7 +42,17 @@ def before_request():
 
 @app.after_request
 def record_metrics(response):
-    REQUEST_LATENCY.observe(time.time() - request.start_time)
+
+    REQUEST_COUNT.labels(
+        method=request.method,
+        endpoint=request.path,
+        http_status=response.status_code
+    ).inc()
+
+    REQUEST_LATENCY.observe(
+        time.time() - request.start_time
+    )
+
     return response
 
 
