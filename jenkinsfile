@@ -26,7 +26,7 @@ pipeline {
     	    steps {
                 withSonarQubeEnv('sonarqube') {
                 sh '''
-                /home/kali/.local/bin/pysonar \
+                pysonar \
                 --sonar-host-url=$SONAR_HOST_URL \
                 --sonar-token=$SONAR_AUTH_TOKEN \
                 --sonar-project-key=my-app
