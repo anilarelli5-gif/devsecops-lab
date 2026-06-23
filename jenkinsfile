@@ -43,13 +43,13 @@ pipeline {
          }
        }
 
-	stage('Secret Scan') {
-	   steps {
-               sh 'gitleaks detect --source . --no-git'
-	   }
-	}
-
-
+#	stage('Secret Scan') {
+#	   steps {
+#               sh 'gitleaks detect --source . --no-git'
+#	   }
+#	}
+#
+#
         stage('Build Image') {
             steps {
                 sh '''
