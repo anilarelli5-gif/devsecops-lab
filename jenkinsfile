@@ -13,7 +13,15 @@ pipeline {
                 checkout scm
             }
         }
-
+         stage('Install Tools') {
+    	     steps {
+                 sh '''
+                 python3 -m pip install --user pysonar
+                 export PATH=$PATH:$HOME/.local/bin
+                 which pysonar
+                 '''
+             } 
+          } 
 	stage('SonarQube Scan') {
     	    steps {
                 withSonarQubeEnv('sonarqube') {
