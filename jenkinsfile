@@ -83,7 +83,7 @@ pipeline {
                     export KUBECONFIG=/var/lib/jenkins/.kube/config
 
                     kubectl get nodes
-                    kubectl set image deployment/myapp-my-app-chart my-app=${IMAGE_NAME}:${IMAGE_TAG}
+                    kubectl set image deployment/my-app my-app=${IMAGE_NAME}:${IMAGE_TAG}
                     kubectl rollout status deployment/my-app
                     '''
                 }
