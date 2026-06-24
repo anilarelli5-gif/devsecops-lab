@@ -57,7 +57,7 @@ pipeline {
                 '''
             }
         }
-/*
+
         stage('Login to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
@@ -75,7 +75,7 @@ pipeline {
                 '''
             }
         }
-*/
+
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'minikube-kubeconfig-flat', variable: 'KUBECONFIG_FILE')]) {
