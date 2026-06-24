@@ -84,7 +84,7 @@ pipeline {
 
                     kubectl get nodes
                     kubectl set image deployment/myapp-my-app-chart -n dev my-app-chart=${IMAGE_NAME}:${IMAGE_TAG}
-                    kubectl rollout status deployment/my-app
+                    kubectl rollout status deployment/myapp-my-app-chart
                     '''
                 }
             }
