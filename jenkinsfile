@@ -80,7 +80,7 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'minikube-kubeconfig-flat', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                    export KUBECONFIG=$KUBECONFIG_FILE
+                    export KUBECONFIG=/var/lib/jenkins/.kube/config
 
                     kubectl get nodes
                     kubectl set image deployment/myapp-my-app-chart my-app=${IMAGE_NAME}:${IMAGE_TAG}
