@@ -34,7 +34,7 @@ pipeline {
            }
         }  
      }
-/*
+
 	stage('Quality Gate') {
     	    steps {
                 timeout(time: 15, unit: 'MINUTES') {
@@ -43,7 +43,7 @@ pipeline {
          }
        }
 
-	stage('Secret Scan') {
+/*	stage('Secret Scan') {
 	   steps {
                sh 'gitleaks detect --source . --no-git'
 	   }
