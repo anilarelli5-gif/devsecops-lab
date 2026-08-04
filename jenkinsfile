@@ -63,7 +63,7 @@ pipeline {
                sh '''
                trivy image \
 	       --timeout 30m \
-               --severity HIGH \
+               --severity MEDIUM \
                --exit-code 1 \
                ${IMAGE_NAME}:${IMAGE_TAG}
                '''
