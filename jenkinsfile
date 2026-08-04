@@ -62,7 +62,7 @@ pipeline {
            steps {
                sh '''
                trivy image \
-	       --timeout 30min \
+	       --timeout duration 30m \
                --severity CRITICAL \
                --exit-code 1 \
                ${IMAGE_NAME}:${IMAGE_TAG}
