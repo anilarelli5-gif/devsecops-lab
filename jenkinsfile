@@ -63,7 +63,7 @@ pipeline {
                sh '''
                trivy image \
 	       --timeout 30m \
-               --severity CRITICAL \
+               --severity HIGH \
                --exit-code 1 \
 	       --format template \
                --template "@contrib/html.tpl" \
